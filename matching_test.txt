@@ -1,0 +1,2 @@
+x_peak: 2499, y_peak: 2050, x0: 2499.0, y0: 2050.0, A: 14.0, sigma_x: 1.0, sigma_y: 1.0
+x_peak: 3095, y_peak: 1984, x0: 3095.0, y0: 1984.0, A: 12.0, sigma_x: 1.0, sigma_y: 1.0

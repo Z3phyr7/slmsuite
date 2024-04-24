@@ -14,7 +14,7 @@ import numpy as np
 from slmsuite.hardware.cameras.camera import Camera
 
 try:
-    import vimba
+    import vmbpy as vimba
 except ImportError:
     print("alliedvision.py: vimba not installed. Install to use AlliedVision cameras.")
 
@@ -63,7 +63,7 @@ class AlliedVision(Camera):
         if AlliedVision.sdk is None:
             if verbose:
                 print("vimba initializing... ", end="")
-            AlliedVision.sdk = vimba.Vimba.get_instance()
+            AlliedVision.sdk = vimba.VmbSystem.get_instance()
             AlliedVision.sdk.__enter__()
             if verbose:
                 print("success")
@@ -153,7 +153,7 @@ class AlliedVision(Camera):
             List of AlliedVision serial numbers.
         """
         if AlliedVision.sdk is None:
-            AlliedVision.sdk = vimba.Vimba.get_instance()
+            AlliedVision.sdk = vimba.VmbSystem.get_instance()
             AlliedVision.sdk.__enter__()
             close_sdk = True
         else:
