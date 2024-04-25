@@ -31,7 +31,7 @@ def peak_detection(intensity_matrix: np.ndarray, min_distance:int=1, threshold_a
     peaks = peak_local_max(intensity_matrix, min_distance=min_distance, threshold_abs=threshold_abs, num_peaks=2)
     return peaks
 
-def gaussian_2d(yx:tuple, x0:float, y0:float, A:float, sigma_x:float, sigma_y:float) -> float:
+def gaussian_2d(yx:tuple, y0:float, x0:float, A:float, sigma_x:float, sigma_y:float) -> float:
     """
     2D Gaussian function.
     """
@@ -65,10 +65,11 @@ def fit_gaussian_2d(intensity_matrix:np.ndarray, peaks_coords:list, ROI_radius:i
         z_roi = intensity_matrix[y_roi, x_roi]  # Note: reverse indexing for numpy arrays
         
         # Initial guess for Gaussian parameters
-        initial_guess = (y0, x0, z_roi.max(), 1, 1)  # (x0, y0, amplitude, sigma_x, sigma_y)
+        initial_guess = (y0, x0, z_roi.max(), ROI_radius/2, ROI_radius/2)  # (x0, y0, amplitude, sigma_x, sigma_y)
+        bound = ([y0 - ROI_radius, x0 - ROI_radius, 0, 0, 0],[y0 + ROI_radius, x0 + ROI_radius, np.max(intensity_matrix) + 1, ROI_radius, ROI_radius])
         
         # Fit Gaussian function to ROI
-        popt, pcov = curve_fit(gaussian_2d, (y_roi.flatten(), x_roi.flatten()), z_roi.flatten(), p0=initial_guess)
+        popt, pcov = curve_fit(gaussian_2d, (y_roi.flatten(), x_roi.flatten()), z_roi.flatten(), p0=initial_guess, bounds=bound)
         gaussian_params.append(popt)
     return gaussian_params
 
