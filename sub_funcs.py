@@ -118,6 +118,8 @@ def sort_spot(gaussian_params: List[Dict], x1, x2, vibration_range = 50) -> Tupl
             spot1.append(dictionary)
         elif dictionary['x0']>= (x2 - vibration_range) and dictionary['x0'] <= (x2 +vibration_range):
             spot2.append(dictionary)
+        else:
+            raise ValueError("The spot cannot be sorted to any class")
     return spot1,spot2
 
 def deviation_anlys(spot_list:List[Dict]) -> List:
