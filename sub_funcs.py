@@ -104,6 +104,7 @@ def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
     """
     gaussian_params = []
     with open(filename, 'r') as f:
+        next(f)
         for line in f:
             params = line.strip().split(', ')
             params = {param.split(': ')[0] : float(param.split(': ')[1]) for param in params}
