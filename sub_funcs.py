@@ -5,6 +5,22 @@ from scipy.optimize import curve_fit
 from typing import List, Dict, Tuple
 
 def crop(image, ROI):
+    """
+    Crop an image to a region of interest (ROI).
+
+    Parameters
+    ----------
+    image : np.ndarray
+        2D array of intensity values.
+    ROI : tuple
+        Region of interest (x, y, width, height).
+
+    Returns
+    -------
+    np.ndarray
+        Cropped image.
+    """
+
     x, width, y, height = ROI
     width = int(width/2)
     height = int(height/2)
@@ -111,23 +127,170 @@ def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
             gaussian_params.append(params)
     return gaussian_params
 
-def sort_spot(gaussian_params: List[Dict], x1, x2, vibration_range = 50) -> Tuple[List[Dict]]:
+def sort_spot(gaussian_params: List[Dict], x1, x2, by_x: bool = True, vibration_range = 50) -> Tuple[List[Dict]]:
+    """
+    Sort the spots to two classes based on their x or y coordinate.
+    
+    Parameters
+    ----------
+    gaussian_params : 
+        List[Dict]
+            List of dictionaries of Gaussian parameters for each peak.
+        x1 : float
+            x or ycoordinate of the first class.
+        x2 : float
+            x or y coordinate of the second class.
+        by_x : bool, optional
+            Sort by x coordinate if True, by y coordinate if False, by default True.
+        vibration_range : int, optional
+            Range of vibration, by default 50.
+
+    Returns
+    -------
+    Tuple[List[Dict]]
+        Two lists of dictionaries of Gaussian parameters for each peak.
+    """
     spot1 = []
     spot2 = []
-    for dictionary in gaussian_params:
-        if dictionary['x0']>= (x1 - vibration_range) and dictionary['x0']<= (x1 + vibration_range):
-            spot1.append(dictionary)
-        elif dictionary['x0']>= (x2 - vibration_range) and dictionary['x0'] <= (x2 +vibration_range):
-            spot2.append(dictionary)
-        else:
-            raise ValueError("The spot cannot be sorted to any class")
+    if by_x:
+        for dictionary in gaussian_params:
+            if dictionary['x0']>= (x1 - vibration_range) and dictionary['x0']<= (x1 + vibration_range):
+                spot1.append(dictionary)
+            elif dictionary['x0']>= (x2 - vibration_range) and dictionary['x0'] <= (x2 +vibration_range):
+                spot2.append(dictionary)
+            else:
+                raise ValueError("The spot cannot be sorted to any class")
+    else:
+        for dictionary in gaussian_params:
+            if dictionary['y0']>= (x1 - vibration_range) and dictionary['y0']<= (x1 + vibration_range):
+                spot1.append(dictionary)
+            elif dictionary['y0']>= (x2 - vibration_range) and dictionary['y0'] <= (x2 +vibration_range):
+                spot2.append(dictionary)
+            else:
+                raise ValueError("The spot cannot be sorted to any class")
     return spot1,spot2
 
-def deviation_anlys(spot_list:List[Dict]) -> List:
-    deviation_list =[]
-    previous = spot_list[0]
-    for spot in spot_list[1:]:
-        deviation =  ((previous['x0']-spot['x0'])**2 + (previous['y0']-spot['y0'])**2)**0.5
-        deviation_list.append(deviation)
-        previous = spot
-    return deviation_list
+def consecutive_anlys_1st(spot_list:List[Dict]) -> float:
+    """
+    Calculate the deviation of consecutive spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+    
+    Returns
+    -------
+    float
+        Deviation of consecutive spots in the same class.
+    """
+    x0 = np.array([spot['x0'] for spot in spot_list])
+    y0 = np.array([spot['y0'] for spot in spot_list])
+    x_diff = np.diff(x0)
+    y_diff = np.diff(y0)
+    deviation = x_diff**2 + y_diff**2
+    return deviation.mean()**0.5
+
+def consecutive_anlys_2nd(spot_list:List[Dict]) -> float:
+    """
+    Calculate the deviation of 2nd consecutive spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+
+    Returns
+    -------
+    float
+        Deviation of 2nd consecutive spots in the same class.    
+    """
+    x0 = [spot['x0'] for spot in spot_list]
+    y0 = [spot['y0'] for spot in spot_list]
+    x_diff = np.array([x0[i+2] - x0[i] for i in range(len(x0)-2)])
+    y_diff = np.aaray([y0[i+2] - y0[i] for i in range(len(y0)-2)])
+    deviation = x_diff**2 + y_diff**2
+    return deviation.mean()**0.5
+
+def consecutive_anlys_3rd(spot_list:List[Dict]) -> float:
+    """
+    Calculate the deviation of 3rd consecutive spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+
+    Returns
+    -------
+    float
+        Deviation of 3rd consecutive spots in the same class.
+    """
+    x0 = [spot['x0'] for spot in spot_list]
+    y0 = [spot['y0'] for spot in spot_list]
+    x_diff = np.array([x0[i+3] - x0[i] for i in range(len(x0)-3)])
+    y_diff = np.array([y0[i+3] - y0[i] for i in range(len(y0)-3)])
+    deviation = x_diff**2 + y_diff**2
+    return deviation.mean()**0.5
+
+def spread_anlys(spot_list:List[Dict]) -> float:
+    """
+    Calculate the spread of spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+
+    Returns
+    -------
+    float
+        Spread of spots in the same class.
+    """
+
+    x0 = np.array([spot['x0'] for spot in spot_list])
+    y0 = np.array([spot['y0'] for spot in spot_list])
+    x_mean = np.mean(x0)
+    y_mean = np.mean(y0)
+    spread = (x0 - x_mean)**2 + (y0 - y_mean)**2
+    return spread.mean()**0.5
+
+def drift_visualisation(spot_list:List[Dict]) -> None:
+    """
+    Visualise the drift of spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+    """
+    x0 = np.array([spot['x0'] for spot in spot_list])
+    y0 = np.array([spot['y0'] for spot in spot_list])
+    plt.plot(x0, y0, 'o-')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.show()
+
+def XY_visualisation(spot_list:List[Dict]) -> None:
+    """
+    Visualise the XY coordinates of spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+    """
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    x0 = np.array([spot['x0'] for spot in spot_list])
+    y0 = np.array([spot['y0'] for spot in spot_list])
+    time = np.arange(len(x0)) * 3
+    ax[0].plot(time, x0, 'o-', label='x0')
+    ax[1].plot(time, y0, 'o-', label='y0')
+    ax[0].set_xlabel('Time (min)')
+    ax[1].set_xlabel('Time (min)')
+    ax[0].set_ylabel('x')
+    ax[1].set_ylabel('y')
+    ax[0].title.set_text('x vs Time')
+    ax[1].title.set_text('y vs Time')
+    plt.show()
+
