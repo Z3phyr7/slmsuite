@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from skimage.feature import peak_local_max
 from scipy.optimize import curve_fit
 from typing import List, Dict, Tuple
+from datetime import datetime
 
 def crop(image, ROI):
     """
@@ -102,7 +103,8 @@ def write_gaussian_params_to_file(gaussian_params:list, peaks:list, filename:str
     """
     with open(filename, 'a') as f:
         for peak, params in zip(peaks, gaussian_params):
-            f.write(f'x_peak: {peak[1]}, y_peak: {peak[0]}, x0: {params[1]}, y0: {params[0]}, A: {params[2]}, sigma_x: {params[3]}, sigma_y: {params[4]}\n')
+            current_time = datetime.now().strftime("%H:%M:%S")
+            f.write(f'x_peak: {peak[1]}, y_peak: {peak[0]}, x0: {params[1]}, y0: {params[0]}, A: {params[2]}, sigma_x: {params[3]}, sigma_y: {params[4]}, time: {current_time}\n')
 
 def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
     """
