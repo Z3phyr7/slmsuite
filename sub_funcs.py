@@ -74,6 +74,7 @@ def fit_gaussian_2d(intensity_matrix:np.ndarray, peaks_coords:list, ROI_radius:i
         List of Gaussian parameters for each peak.
     """
     gaussian_params = []
+    errors = []
     for y0, x0 in peaks_coords:
         # Define ROI around the peak center
         x_roi = np.arange(x0 - ROI_radius, x0 + ROI_radius + 1)
@@ -88,9 +89,10 @@ def fit_gaussian_2d(intensity_matrix:np.ndarray, peaks_coords:list, ROI_radius:i
         # Fit Gaussian function to ROI
         popt, pcov = curve_fit(gaussian_2d, (y_roi.flatten(), x_roi.flatten()), z_roi.flatten(), p0=initial_guess, bounds=bound)
         gaussian_params.append(popt)
-    return gaussian_params
+        errors.append(np.sqrt(np.diag(pcov)))
+    return gaussian_params, errors
 
-def write_gaussian_params_to_file(gaussian_params:list, peaks:list, filename:str) -> None:
+def write_gaussian_params_to_file(gaussian_params:list, errors:list, peaks:list, filename:str) -> None:
     """
     Write Gaussian parameters to a text file.
 
@@ -102,9 +104,9 @@ def write_gaussian_params_to_file(gaussian_params:list, peaks:list, filename:str
         Name of the output file.
     """
     with open(filename, 'a') as f:
-        for peak, params in zip(peaks, gaussian_params):
-            current_time = datetime.now().strftime("%H:%M:%S")
-            f.write(f'x_peak: {peak[1]}, y_peak: {peak[0]}, x0: {params[1]}, y0: {params[0]}, A: {params[2]}, sigma_x: {params[3]}, sigma_y: {params[4]}, time: {current_time}\n')
+        for peak, params, error in zip(peaks, gaussian_params, errors):
+            current_time = datetime.now().strftime("%H/%M/%S")
+            f.write(f'x_peak: {peak[1]}, y_peak: {peak[0]}, x0: {params[1]}, y0: {params[0]}, A: {params[2]}, sigma_x: {params[3]}, sigma_y: {params[4]}, x0_err: {error[1]}, y0_err: {error[0]}, A_err: {error[2]}, sigma_x_err: {error[3]}, sigma_y_err: {error[4]}, time: {current_time}\n')
 
 def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
     """
@@ -122,11 +124,21 @@ def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
     """
     gaussian_params = []
     with open(filename, 'r') as f:
-        next(f)
+        next(f)  # Skip the first line
         for line in f:
             params = line.strip().split(', ')
-            params = {param.split(': ')[0] : float(param.split(': ')[1]) for param in params}
-            gaussian_params.append(params)
+            parsed_params = {}
+            for param in params:
+                key, value = param.split(': ')
+                if '/' in value:
+                    # Handle time data in HH.MM.SS format
+                    hours, minutes, seconds = map(int, value.split('/'))
+                    total_seconds = hours * 3600 + minutes * 60 + seconds
+                    parsed_params[key] = total_seconds
+                else:
+                    # Convert other values to floats
+                    parsed_params[key] = float(value)
+            gaussian_params.append(parsed_params)
     return gaussian_params
 
 def sort_spot(gaussian_params: List[Dict], x1, x2, by_x: bool = True, vibration_range = 50) -> Tuple[List[Dict]]:
@@ -285,9 +297,11 @@ def XY_visualisation(spot_list:List[Dict]) -> None:
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     x0 = np.array([spot['x0'] for spot in spot_list])
     y0 = np.array([spot['y0'] for spot in spot_list])
+    x0_err = np.array([spot['x0_err'] for spot in spot_list])
+    y0_err = np.array([spot['y0_err'] for spot in spot_list])
     time = np.arange(len(x0)) * 3
-    ax[0].plot(time, x0, 'o-', label='x0')
-    ax[1].plot(time, y0, 'o-', label='y0')
+    ax[0].errorbar(time, x0, yerr = x0_err, fmt='o', color='b', ecolor='r', label='x0', barsabove=True)
+    ax[1].errorbar(time, y0, yerr = y0_err, fmt='o', color='b', ecolor='r', label='y0', barsabove=True)
     ax[0].set_xlabel('Time (min)')
     ax[1].set_xlabel('Time (min)')
     ax[0].set_ylabel('x')
