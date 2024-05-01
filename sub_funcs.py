@@ -285,7 +285,31 @@ def drift_visualisation(spot_list:List[Dict]) -> None:
     plt.ylabel('y')
     plt.show()
 
+
 def XY_visualisation(spot_list:List[Dict]) -> None:
+    """
+    Visualise the XY coordinates of spots in the same class.
+
+    Parameters
+    ----------
+    spot_list : List[Dict]
+        List of dictionaries of Gaussian parameters for each peak.
+    """
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    x0 = np.array([spot['x0'] for spot in spot_list])
+    y0 = np.array([spot['y0'] for spot in spot_list])
+    time = np.arange(len(x0)) * 3
+    ax[0].plot(time, x0, 'o-')
+    ax[1].plot(time, y0, 'o-')
+    ax[0].set_xlabel('Time (min)')
+    ax[1].set_xlabel('Time (min)')
+    ax[0].set_ylabel('x')
+    ax[1].set_ylabel('y')
+    ax[0].title.set_text('x vs Time')
+    ax[1].title.set_text('y vs Time')
+    plt.show()
+
+def XY_visualisation_error(spot_list:List[Dict]) -> None:
     """
     Visualise the XY coordinates of spots in the same class.
 
