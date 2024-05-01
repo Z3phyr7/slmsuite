@@ -173,7 +173,7 @@ def sort_spot(gaussian_params: List[Dict], x1, x2, by_x: bool = True, vibration_
             elif dictionary['x0']>= (x2 - vibration_range) and dictionary['x0'] <= (x2 +vibration_range):
                 spot2.append(dictionary)
             else:
-                raise ValueError("The spot cannot be sorted to any class")
+                raise ValueError("The spot cannot be sorted to any class, the coordinate is {}".format(dictionary['x0']))
     else:
         for dictionary in gaussian_params:
             if dictionary['y0']>= (x1 - vibration_range) and dictionary['y0']<= (x1 + vibration_range):
