@@ -27,7 +27,7 @@ def crop(image, ROI):
     height = int(height/2)
     return image[y-height:y+height, x-width:x+width]
 
-def peak_detection(intensity_matrix: np.ndarray, min_distance:int=1, threshold_abs:float=0) -> np.ndarray:
+def peak_detection(intensity_matrix: np.ndarray, min_distance:int=10, threshold_abs:float=0) -> np.ndarray:
     """
     Detect peaks in an intensity matrix using Gaussian smoothing and peak finding.
 
@@ -55,7 +55,7 @@ def gaussian_2d(yx:tuple, y0:float, x0:float, A:float, sigma_x:float, sigma_y:fl
     y,x = yx
     return A * np.exp(-(x-x0)**2/(2*sigma_x**2) - (y-y0)**2/(2*sigma_y**2))
 
-def fit_gaussian_2d(intensity_matrix:np.ndarray, peaks_coords:list, ROI_radius:int=50) -> list:
+def fit_gaussian_2d(intensity_matrix:np.ndarray, peaks_coords:list, ROI_radius:int=60) -> list:
     """
     Fit 2D Gaussian function to intensity matrix around peak coordinates.
 
