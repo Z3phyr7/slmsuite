@@ -108,7 +108,7 @@ def write_gaussian_params_to_file(gaussian_params:list, errors:list, peaks:list,
             current_time = datetime.now().strftime("%H/%M/%S")
             f.write(f'x_peak: {peak[1]}, y_peak: {peak[0]}, x0: {params[1]}, y0: {params[0]}, A: {params[2]}, sigma_x: {params[3]}, sigma_y: {params[4]}, x0_err: {error[1]}, y0_err: {error[0]}, A_err: {error[2]}, sigma_x_err: {error[3]}, sigma_y_err: {error[4]}, time: {current_time}\n')
 
-def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
+def read_gaussian_params_from_file(filename:str) -> Tuple[List[Dict[str, float]], Dict]:
     """
     Read Gaussian parameters from a text file.
 
@@ -124,7 +124,17 @@ def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
     """
     gaussian_params = []
     with open(filename, 'r') as f:
-        next(f)  # Skip the first line
+        first_line = f.readline().strip().split(', ')
+        classification_dict = {}
+        for element in first_line:
+            key, value = element.split(': ')
+            if key == 'axis':
+                classification_dict[key] = value
+            elif key == 'radiant' or key == 'black' or key == 'polaris':
+                classification_dict[key] = float(value)
+            else:
+                ValueError("The classification is not valid")
+
         for line in f:
             params = line.strip().split(', ')
             parsed_params = {}
@@ -139,9 +149,9 @@ def read_gaussian_params_from_file(filename:str) -> List[Dict[str, float]]:
                     # Convert other values to floats
                     parsed_params[key] = float(value)
             gaussian_params.append(parsed_params)
-    return gaussian_params
+    return gaussian_params, classification_dict
 
-def sort_spot(gaussian_params: List[Dict], x1, x2, by_x: bool = True, vibration_range = 50) -> Tuple[List[Dict]]:
+def sort_spot(gaussian_params: List[Dict], classification_dict: Dict, spot1_name:str, spot2_name:str, vibration_range = 50) -> Tuple[List[Dict]]:
     """
     Sort the spots to two classes based on their x or y coordinate.
     
@@ -164,6 +174,10 @@ def sort_spot(gaussian_params: List[Dict], x1, x2, by_x: bool = True, vibration_
     Tuple[List[Dict]]
         Two lists of dictionaries of Gaussian parameters for each peak.
     """
+    x1 = classification_dict[spot1_name]
+    x2 = classification_dict[spot2_name]
+    by_x = classification_dict['axis'] == 'x'
+
     spot1 = []
     spot2 = []
     if by_x:
@@ -269,7 +283,7 @@ def spread_anlys(spot_list:List[Dict]) -> float:
     spread = (x0 - x_mean)**2 + (y0 - y_mean)**2
     return spread.mean()**0.5
 
-def drift_visualisation(spot_list:List[Dict]) -> None:
+def drift_visualisation(spot_list:List[Dict], spot_name = None) -> None:
     """
     Visualise the drift of spots in the same class.
 
@@ -283,6 +297,10 @@ def drift_visualisation(spot_list:List[Dict]) -> None:
     plt.plot(x0, y0, 'o-')
     plt.xlabel('x')
     plt.ylabel('y')
+    if spot_name is not None:
+        plt.title(f'Drift of {spot_name} spots')
+    else: pass
+    plt.title('Drift of spots')
     plt.show()
 
 
@@ -334,3 +352,34 @@ def XY_visualisation_error(spot_list:List[Dict]) -> None:
     ax[1].title.set_text('y vs Time')
     plt.show()
 
+def XY_visualisation_for_two_spots(spot_list_1: List[Dict], spot_list_2: List[Dict], spot1_name: str = None, spot2_name:str = None) -> None:
+
+    fig,ax = plt.subplots(1,2, figsize=(10,5))
+
+    x0_1 = np.array([spot['x0'] for spot in spot_list_1]) - spot_list_1[0]['x0']
+    y0_1 = np.array([spot['y0'] for spot in spot_list_1]) - spot_list_1[0]['y0']
+    x0_2 = np.array([spot['x0'] for spot in spot_list_2]) - spot_list_2[0]['x0']
+    y0_2 = np.array([spot['y0'] for spot in spot_list_2]) - spot_list_2[0]['y0']
+    time_1 = np.array([spot['time'] for spot in spot_list_1]) - spot_list_1[0]['time']
+    time_2 = np.array([spot['time'] for spot in spot_list_2]) - spot_list_2[0]['time']
+
+    if spot1_name is not None and spot2_name is not None:
+        ax[0].plot(time_1, x0_1, 'o-', label=spot1_name, color='blue')
+        ax[0].plot(time_2, x0_2, 'o-', label=spot2_name, color='red')
+        ax[1].plot(time_1, y0_1, 'o-', label=spot1_name, color='blue')
+        ax[1].plot(time_2, y0_2, 'o-', label=spot2_name, color='red')
+    else:
+        ax[0].plot(time_1, x0_1, 'o-', label='spot1', color='blue')
+        ax[0].plot(time_2, x0_2, 'o-', label='spot2', color='red')
+        ax[1].plot(time_1, y0_1, 'o-', label='spot1', color='blue')
+        ax[1].plot(time_2, y0_2, 'o-', label='spot2', color='red')
+    ax[0].set_xlabel('Time (s)')
+    ax[1].set_xlabel('Time (s)')
+    ax[0].set_ylabel('x')
+    ax[1].set_ylabel('y')
+    fig.suptitle('Comparison of XY drift of two spots')
+    ax[0].title.set_text('x vs Time')
+    ax[1].title.set_text('y vs Time')
+    ax[0].legend()
+    ax[1].legend()
+    plt.show()
