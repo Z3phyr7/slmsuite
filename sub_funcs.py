@@ -130,7 +130,7 @@ def read_gaussian_params_from_file(filename:str) -> Tuple[List[Dict[str, float]]
             key, value = element.split(': ')
             if key == 'axis':
                 classification_dict[key] = value
-            elif key == 'radiant' or key == 'black' or key == 'polaris':
+            elif key == 'radiant' or key == 'black' or key == 'polaris' or key == 'time':
                 classification_dict[key] = float(value)
             else:
                 ValueError("The classification is not valid")

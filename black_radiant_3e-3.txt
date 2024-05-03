@@ -1,4 +1,4 @@
-The 2500 is for the radiant dye and the 3098 is for Thorlabs black.
+axis: x, radiant: 2500, black: 3098
 x_peak: 3098, y_peak: 1994, x0: 3098.0, y0: 1994.0, A: 5.0, sigma_x: 1.0, sigma_y: 1.0
 x_peak: 2500, y_peak: 2027, x0: 2500.0, y0: 2027.0, A: 5.0, sigma_x: 1.0, sigma_y: 1.0
 x_peak: 2503, y_peak: 2055, x0: 2503.0, y0: 2055.0, A: 6.0, sigma_x: 1.0, sigma_y: 1.0
